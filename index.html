@@ -3,909 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Equipment Maintenance CRM</title>
+    <title>ERP Biomédical Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <!-- Add SDKs for Firebase products that you want to use -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
-        .sidebar {
-            transition: all 0.3s ease;
+        body { font-family: 'Arial', sans-serif; }
+        .sidebar { width: 250px; z-index: 10; } /* Ensure sidebar is above content if overlapping */
+        .content { margin-left: 250px; }
+        @media (max-width: 768px) { /* Responsive adjustments */
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative; /* Changed from fixed for mobile flow */
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Add some shadow for separation */
+            }
+            .content {
+                margin-left: 0;
+            }
+            .nav-link {
+                text-align: center;
+                border-bottom: 1px solid #edf2f7;
+                border-left: none !important; /* Remove left border */
+            }
+            .nav-link.active {
+                 border-left: none !important; /* Ensure no left border on active */
+                 border-bottom: 3px solid #3182ce !important; /* Use bottom border for active indication */
+                 background-color: #edf2f7; /* Slightly different bg for active on mobile */
+            }
+            #section-title-header { /* Header for section title might need adjustment */
+                text-align: center;
+            }
         }
-        .sidebar.collapsed {
-            width: 70px;
-        }
-        .sidebar.collapsed .nav-text {
-            display: none;
-        }
-        .main-content {
-            transition: all 0.3s ease;
-        }
-        .active {
-            background-color: #3b82f6;
-            color: white !important;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        }
-        .card {
-            transition: all 0.3s ease;
-        }
+        .nav-link { display: block; padding: 12px 18px; color: #4a5568; text-decoration: none; border-left: 3px solid transparent; transition: background-color 0.3s, border-left-color 0.3s; }
+        .nav-link:hover { background-color: #edf2f7; border-left-color: #4299e1; }
+        .nav-link.active { background-color: #e2e8f0; border-left-color: #3182ce; font-weight: 600; color: #2b6cb0; }
+        .section { display: none; } /* Hide all sections by default */
+        .section.active { display: block; } /* Show active section */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        th, td { border: 1px solid #e2e8f0; padding: 10px 14px; text-align: left; }
+        th { background-color: #f7fafc; font-weight: 600; color: #4a5568; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background-color: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 550px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+        .btn { padding: 10px 18px; border-radius: 5px; cursor: pointer; transition: background-color 0.2s, box-shadow 0.2s; font-size: 0.9rem; line-height: 1.3rem; font-weight: 500; }
+        .btn-primary { background-color: #4299e1; color: white; }
+        .btn-primary:hover { background-color: #3182ce; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-secondary { background-color: #e2e8f0; color: #2d3748; }
+        .btn-secondary:hover { background-color: #cbd5e0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-danger { background-color: #f56565; color: white; }
+        .btn-danger:hover { background-color: #e53e3e; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-input { width: 100%; padding: 12px; border: 1px solid #cbd5e0; border-radius: 5px; margin-bottom: 15px; box-sizing: border-box; transition: border-color 0.2s; }
+        .form-input:focus { border-color: #4299e1; outline: none; box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.5); }
+        .form-label { display: block; margin-bottom: 8px; font-weight: 600; color: #4a5568; }
+        .toast { position: fixed; bottom: 25px; right: 25px; background-color: #2d3748; color: white; padding: 18px; border-radius: 6px; z-index: 1001; display: none; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
     </style>
 </head>
-<body class="bg-gray-100 flex h-screen overflow-hidden">
-    <!-- Sidebar -->
-    <div class="sidebar bg-indigo-800 text-white flex flex-col h-full" id="sidebar">
-        <div class="flex items-center justify-between p-4 border-b border-indigo-700">
-            <div class="flex items-center">
-                <i class="fas fa-tools text-2xl"></i>
-                <span class="nav-text ml-2 text-xl font-bold">MaintenanceCRM</span>
-            </div>
-            <button id="toggleSidebar" class="text-white focus:outline-none">
-                <i class="fas fa-bars"></i>
-            </button>
+<body class="bg-gray-100">
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <div class="sidebar md:fixed md:top-0 md:left-0 md:h-full bg-white shadow-xl p-4 overflow-y-auto">
+            <h1 class="text-3xl font-bold text-blue-700 mb-10 text-center md:text-left pt-2">ERP Biomédical</h1>
+            <nav>
+                <a href="#" class="nav-link active" data-section="dashboard">Tableau de Bord</a>
+                <a href="#" class="nav-link" data-section="customers">Clients</a>
+                <a href="#" class="nav-link" data-section="contracts">Contrats</a>
+                <a href="#" class="nav-link" data-section="equipment">Équipements</a>
+                <a href="#" class="nav-link" data-section="interventions">Interventions</a>
+                <a href="#" class="nav-link" data-section="inventory">Inventaire</a>
+                <a href="#" class="nav-link" data-section="employees">Employés</a>
+                <a href="#" class="nav-link" data-section="billing">Facturation</a>
+                <a href="#" class="nav-link" data-section="reports">Rapports</a>
+            </nav>
         </div>
-        <nav class="flex-grow p-4 overflow-y-auto">
-            <ul>
-                <li class="mb-2">
-                    <a href="#" class="nav-item flex items-center p-2 rounded hover:bg-indigo-700 active">
-                        <i class="fas fa-home"></i>
-                        <span class="nav-text ml-2">Dashboard</span>
-                    </a>
-                </li>
-                <li class="mb-2">
-                    <a href="#" class="nav-item flex items-center p-2 rounded hover:bg-indigo-700">
-                        <i class="fas fa-users"></i>
-                        <span class="nav-text ml-2">Customers</span>
-                    </a>
-                </li>
-                <li class="mb-2">
-                    <a href="#" class="nav-item flex items-center p-2 rounded hover:bg-indigo-700">
-                        <i class="fas fa-file-signature"></i>
-                        <span class="nav-text ml-2">Contracts</span>
-                    </a>
-                </li>
-                <li class="mb-2">
-                    <a href="#" class="nav-item flex items-center p-2 rounded hover:bg-indigo-700">
-                        <i class="fas fa-cogs"></i>
-                        <span class="nav-text ml-2">Equipment</span>
-                    </a>
-                </li>
-                <li class="mb-2">
-                    <a href="#" class="nav-item flex items-center p-2 rounded hover:bg-indigo-700">
-                        <i class="fas fa-wrench"></i>
-                        <span class="nav-text ml-2">Interventions</span>
-                    </a>
-                </li>
-                <li class="mb-2">
-                    <a href="#" class="nav-item flex items-center p-2 rounded hover:bg-indigo-700">
-                        <i class="fas fa-user-tie"></i>
-                        <span class="nav-text ml-2">Employees</span>
-                    </a>
-                </li>
-                <li class="mb-2">
-                    <a href="#" class="nav-item flex items-center p-2 rounded hover:bg-indigo-700">
-                        <i class="fas fa-boxes"></i>
-                        <span class="nav-text ml-2">Inventory</span>
-                    </a>
-                </li>
-                <li class="mb-2">
-                    <a href="#" class="nav-item flex items-center p-2 rounded hover:bg-indigo-700">
-                        <i class="fas fa-file-invoice-dollar"></i>
-                        <span class="nav-text ml-2">Invoices</span>
-                    </a>
-                </li>
-                <li class="mb-2">
-                    <a href="#" class="nav-item flex items-center p-2 rounded hover:bg-indigo-700">
-                        <i class="fas fa-money-bill-wave"></i>
-                        <span class="nav-text ml-2">Payments</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-        <div class="p-4 border-t border-indigo-700">
-            <div class="flex items-center">
-                <img src="https://ui-avatars.com/api/?name=Admin+User&background=random" alt="User" class="w-8 h-8 rounded-full">
-                <div class="ml-2 nav-text">
-                    <p class="text-sm">Admin User</p>
-                    <p class="text-xs text-indigo-300">admin@example.com</p>
-                </div>
+
+        <div class="content flex-1 p-6 md:p-8"> <!-- Added md:p-8 for more padding on larger screens -->
+            <header id="section-title-header" class="bg-white shadow-md rounded-lg p-5 mb-8">
+                <h2 id="section-title" class="text-2xl font-semibold text-gray-800">Tableau de Bord</h2>
+            </header>
+
+            <main>
+                <!-- Dashboard Section -->
+                <section id="dashboard" class="section active p-6 bg-white shadow-lg rounded-lg">
+                    <h3 class="text-xl font-medium mb-5 text-gray-700">Bienvenue sur l'ERP Biomédical</h3>
+                    <p class="text-gray-600">Sélectionnez une section dans le menu pour commencer à gérer vos données biomédicales.</p>
+                </section>
+
+                <!-- Sections for modules -->
+                <section id="customers" class="section p-6 bg-white shadow-lg rounded-lg"></section>
+                <section id="contracts" class="section p-6 bg-white shadow-lg rounded-lg"></section>
+                <section id="equipment" class="section p-6 bg-white shadow-lg rounded-lg"></section>
+                <section id="interventions" class="section p-6 bg-white shadow-lg rounded-lg"></section>
+                <section id="inventory" class="section p-6 bg-white shadow-lg rounded-lg"></section>
+                <section id="employees" class="section p-6 bg-white shadow-lg rounded-lg"></section>
+                <section id="billing" class="section p-6 bg-white shadow-lg rounded-lg"></section>
+                <section id="reports" class="section p-6 bg-white shadow-lg rounded-lg"></section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Generic Modal Structure -->
+    <div id="genericModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-5 pb-3 border-b border-gray-200">
+                <h4 id="modalTitle" class="text-xl font-semibold text-gray-700">Modal Title</h4>
+                <button id="closeModal" class="text-3xl text-gray-400 hover:text-gray-600 transition-colors">&times;</button>
+            </div>
+            <div id="modalBody">
+                <!-- Dynamic content will be injected here -->
             </div>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content flex-1 flex flex-col overflow-hidden">
-        <!-- Top Navigation -->
-        <header class="bg-white shadow-sm z-10">
-            <div class="flex items-center justify-between p-4">
-                <h1 id="page-title" class="text-2xl font-bold text-gray-800">Dashboard</h1>
-                <div class="flex items-center space-x-4">
-                    <div class="relative">
-                        <input type="text" class="rounded-full border border-gray-300 pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Search...">
-                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                    </div>
-                    <button class="text-gray-500 hover:text-gray-700">
-                        <i class="fas fa-bell"></i>
-                    </button>
-                    <button class="text-gray-500 hover:text-gray-700">
-                        <i class="fas fa-cog"></i>
-                    </button>
-                </div>
-            </div>
-        </header>
+    <div id="toast-notification" class="toast">Message here</div>
 
-        <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto p-6 bg-gray-100">
-            <!-- Dashboard Content (default visible) -->
-            <div id="dashboard-content">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <!-- Stats Cards -->
-                <div class="card bg-white rounded-lg shadow p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Active Contracts</p>
-                            <h2 class="text-3xl font-bold text-indigo-600">248</h2>
-                            <p class="text-green-500 text-sm">↑ 12% from last month</p>
-                        </div>
-                        <div class="bg-indigo-100 p-3 rounded-full">
-                            <i class="fas fa-file-signature text-indigo-600 text-xl"></i>
-                        </div>
-                    </div>
-                </div>
+    <script src="firebase-config.js"></script>
+    <!-- Create js directory and main.js -->
+    <script src="js/main.js"></script>
+    <script src="js/customers.js"></script>
+    <script src="js/contracts.js"></script>
+    <script src="js/equipment.js"></script>
+    <script src="js/interventions.js"></script>
+    <script src="js/inventory.js"></script>
+    <script src="js/employees.js"></script>
+    <script src="js/billing.js"></script>
+    <script src="js/reports.js"></script>
 
-                <div class="card bg-white rounded-lg shadow p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Pending Interventions</p>
-                            <h2 class="text-3xl font-bold text-orange-600">42</h2>
-                            <p class="text-red-500 text-sm">↑ 8% from last month</p>
-                        </div>
-                        <div class="bg-orange-100 p-3 rounded-full">
-                            <i class="fas fa-wrench text-orange-600 text-xl"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card bg-white rounded-lg shadow p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Low Inventory Items</p>
-                            <h2 class="text-3xl font-bold text-red-600">15</h2>
-                            <p class="text-red-500 text-sm">↓ 3% from last month</p>
-                        </div>
-                        <div class="bg-red-100 p-3 rounded-full">
-                            <i class="fas fa-box-open text-red-600 text-xl"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card bg-white rounded-lg shadow p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Unpaid Invoices</p>
-                            <h2 class="text-3xl font-bold text-purple-600">$24,580</h2>
-                            <p class="text-green-500 text-sm">↓ 15% from last month</p>
-                        </div>
-                        <div class="bg-purple-100 p-3 rounded-full">
-                            <i class="fas fa-file-invoice-dollar text-purple-600 text-xl"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Interventions -->
-            <div class="bg-white rounded-lg shadow mb-6">
-                <div class="p-5 border-b border-gray-200">
-                    <h2 class="text-xl font-semibold text-gray-800">Recent Interventions</h2>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Equipment</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Technician</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">INT-1024</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">HVAC Unit #A2432</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">John Smith</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2023-06-15</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">In Progress</span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <a href="#" class="text-indigo-600 hover:text-indigo-900">View</a>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">INT-1023</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Elevator #E-102</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Sarah Johnson</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2023-06-14</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <a href="#" class="text-indigo-600 hover:text-indigo-900">View</a>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">INT-1022</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Generator #G-45</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Michael Brown</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2023-06-12</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Scheduled</span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <a href="#" class="text-indigo-600 hover:text-indigo-900">View</a>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="p-4 border-t border-gray-200">
-                    <a href="#" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">View all interventions →</a>
-                </div>
-            </div>
-
-            <!-- Charts and Inventory Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Contracts Chart -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Contracts Overview</h2>
-                    <div class="h-64 relative">
-                        <!-- Chart Placeholder -->
-                        <div class="h-full flex items-center justify-center bg-gray-50 rounded">
-                            <div class="text-center">
-                                <i class="fas fa-chart-bar text-4xl text-indigo-200 mb-2"></i>
-                                <p class="text-gray-400">Contracts by status chart</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Low Stock Inventory -->
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-5 border-b border-gray-200">
-                        <h2 class="text-xl font-semibold text-gray-800">Low Stock Inventory</h2>
-                    </div>
-                    <div class="overflow-y-auto max-h-96">
-                        <ul class="divide-y divide-gray-200">
-                            <li class="px-6 py-4 hover:bg-gray-50">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center">
-                                        <div class="bg-red-100 p-3 rounded-full mr-4">
-                                            <i class="fas fa-bolt text-red-500"></i>
-                                        </div>
-                                        <div>
-                                            <p class="text-sm font-medium text-gray-900">Electrical Fuse 30A</p>
-                                            <p class="text-sm text-gray-500">Stock: 2 (Min: 10)</p>
-                                        </div>
-                                    </div>
-                                    <button class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Reorder</button>
-                                </div>
-                            </li>
-                            <li class="px-6 py-4 hover:bg-gray-50">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center">
-                                        <div class="bg-red-100 p-3 rounded-full mr-4">
-                                            <i class="fas fa-fan text-red-500"></i>
-                                        </div>
-                                        <div>
-                                            <p class="text-sm font-medium text-gray-900">HVAC Motor 1HP</p>
-                                            <p class="text-sm text-gray-500">Stock: 1 (Min: 4)</p>
-                                        </div>
-                                    </div>
-                                    <button class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Reorder</button>
-                                </div>
-                            </li>
-                            <li class="px-6 py-4 hover:bg-gray-50">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center">
-                                        <div class="bg-yellow-100 p-3 rounded-full mr-4">
-                                            <i class="fas fa-oil-can text-yellow-500"></i>
-                                        </div>
-                                        <div>
-                                            <p class="text-sm font-medium text-gray-900">Hydraulic Oil</p>
-                                            <p class="text-sm text-gray-500">Stock: 5 (Min: 15)</p>
-                                        </div>
-                                    </div>
-                                    <button class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Reorder</button>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="p-4 border-t border-gray-200">
-                        <a href="#" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">View full inventory →</a>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Customers Content -->
-            <div id="customers-content" class="hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-2xl font-bold text-gray-800">Customer Management</h1>
-                    <button class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-                        <i class="fas fa-plus mr-2"></i>Add New Customer
-                    </button>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-5 border-b border-gray-200 flex justify-between items-center">
-                        <h2 class="text-xl font-semibold text-gray-800">All Customers</h2>
-                        <div class="relative w-64">
-                            <input type="text" class="w-full rounded border border-gray-300 pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Search customers...">
-                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                        </div>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contracts</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">C-1001</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Acme Corporation</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">John Smith (555) 123-4567</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">contact@acme.com</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">3 Active</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-3"><i class="fas fa-eye"></i></a>
-                                        <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-3"><i class="fas fa-edit"></i></a>
-                                        <a href="#" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></a>
-                                    </td>
-                                </tr>
-                                <!-- Additional customer rows would be here -->
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="px-5 py-3 border-t border-gray-200 flex items-center justify-between">
-                        <div class="text-sm text-gray-500">Showing <span class="font-medium">1</span> to <span class="font-medium">5</span> of <span class="font-medium">24</span> results</div>
-                        <div class="flex space-x-1">
-                            <button class="px-3 py-1 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50">Previous</button>
-                            <button class="px-3 py-1 border border-indigo-600 rounded text-sm font-medium text-indigo-600">1</button>
-                            <button class="px-3 py-1 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50">2</button>
-                            <button class="px-3 py-1 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50">Next</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Contracts Content -->
-            <div id="contracts-content" class="hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-2xl font-bold text-gray-800">Contract Management</h1>
-                    <div class="flex space-x-4">
-                        <select class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option>Filter by Status</option>
-                            <option>Active</option>
-                            <option>Pending</option>
-                            <option>Expired</option>
-                        </select>
-                        <button class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-                            <i class="fas fa-plus mr-2"></i>New Contract
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-5 border-b border-gray-200 flex justify-between items-center">
-                        <h2 class="text-xl font-semibold text-gray-800">Active Contracts</h2>
-                        <div class="relative w-64">
-                            <input type="text" class="w-full rounded border border-gray-300 pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Search contracts...">
-                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                        </div>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contract #</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">CT-2023-001</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Acme Corporation</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2023-01-15</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2023-12-31</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-3"><i class="fas fa-eye"></i></a>
-                                        <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-3"><i class="fas fa-edit"></i></a>
-                                        <a href="#" class="text-red-600 hover:text-red-900"><i class="fas fa-file-pdf"></i></a>
-                                    </td>
-                                </tr>
-                                <!-- Additional contract rows would be here -->
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="px-5 py-3 border-t border-gray-200 flex items-center justify-between">
-                        <div class="text-sm text-gray-500">Showing <span class="font-medium">1</span> to <span class="font-medium">5</span> of <span class="font-medium">12</span> results</div>
-                        <div class="flex space-x-1">
-                            <button class="px-3 py-1 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50">Previous</button>
-                            <button class="px-3 py-1 border border-indigo-600 rounded text-sm font-medium text-indigo-600">1</button>
-                            <button class="px-3 py-1 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50">2</button>
-                            <button class="px-3 py-1 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50">Next</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Equipment Content -->
-            <div id="equipment-content" class="hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-2xl font-bold text-gray-800">Equipment Inventory</h1>
-                    <div class="flex space-x-4">
-                        <select class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option>All Equipment Types</option>
-                            <option>HVAC</option>
-                            <option>Elevators</option>
-                            <option>Generators</option>
-                        </select>
-                        <button class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-                            <i class="fas fa-plus mr-2"></i>Register Equipment
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-                    <div class="card bg-white rounded-lg shadow p-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-500 text-sm">Total Equipment</p>
-                                <h2 class="text-3xl font-bold text-indigo-600">384</h2>
-                            </div>
-                            <div class="bg-indigo-100 p-3 rounded-full">
-                                <i class="fas fa-cogs text-indigo-600 text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card bg-white rounded-lg shadow p-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-500 text-sm">Under Maintenance</p>
-                                <h2 class="text-3xl font-bold text-orange-600">14</h2>
-                            </div>
-                            <div class="bg-orange-100 p-3 rounded-full">
-                                <i class="fas fa-tools text-orange-600 text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card bg-white rounded-lg shadow p-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-500 text-sm">Out of Service</p>
-                                <h2 class="text-3xl font-bold text-red-600">5</h2>
-                            </div>
-                            <div class="bg-red-100 p-3 rounded-full">
-                                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-5 border-b border-gray-200 flex justify-between items-center">
-                        <h2 class="text-xl font-semibold text-gray-800">All Equipment</h2>
-                        <div class="flex space-x-2">
-                            <div class="relative w-64">
-                                <input type="text" class="w-full rounded border border-gray-300 pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Search equipment...">
-                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                            </div>
-                            <button class="text-gray-600 hover:text-gray-800 p-2">
-                                <i class="fas fa-filter"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Serial #</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Service</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">A2432</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">HVAC Unit</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">ACME-HVAC-5000</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Acme Corp - Floor 3</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2023-05-20</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Operational</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-3"><i class="fas fa-history"></i></a>
-                                        <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-3"><i class="fas fa-edit"></i></a>
-                                        <a href="#" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></a>
-                                    </td>
-                                </tr>
-                                <!-- Additional equipment rows would be here -->
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="px-5 py-3 border-t border-gray-200">
-                        <a href="#" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">View all equipment →</a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Interventions Content -->
-            <div id="interventions-content" class="hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-2xl font-bold text-gray-800">Work Interventions</h1>
-                    <div class="flex space-x-4">
-                        <select class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option>All Status</option>
-                            <option>Scheduled</option>
-                            <option>In Progress</option>
-                            <option>Completed</option>
-                        </select>
-                        <button class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-                            <i class="fas fa-plus mr-2"></i>New Intervention
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-5 border-b border-gray-200 flex justify-between items-center">
-                        <h2 class="text-xl font-semibold text-gray-800">Recent Interventions</h2>
-                        <div class="relative w-64">
-                            <input type="text" class="w-full rounded border border-gray-300 pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Search interventions...">
-                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                        </div>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Equipment</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Technician</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schedule</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">INT-1025</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Elevator #E-105</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Sarah Johnson</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2023-06-18</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Scheduled</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-3"><i class="fas fa-eye"></i></a>
-                                        <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-3"><i class="fas fa-edit"></i></a>
-                                        <a href="#" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></a>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="px-5 py-3 border-t border-gray-200">
-                        <a href="#" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">View all interventions →</a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Employees Content -->
-            <div id="employees-content" class="hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-2xl font-bold text-gray-800">Employee Management</h1>
-                    <div class="flex space-x-4">
-                        <select class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option>All Roles</option>
-                            <option>Technician</option>
-                            <option>Admin</option>
-                            <option>Accountant</option>
-                        </select>
-                        <button class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-                            <i class="fas fa-plus mr-2"></i>Add Employee
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-5 border-b border-gray-200 flex justify-between items-center">
-                        <h2 class="text-xl font-semibold text-gray-800">All Employees</h2>
-                        <div class="relative w-64">
-                            <input type="text" class="w-full rounded border border-gray-300 pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Search employees...">
-                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                        </div>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee ID</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">EMP-1051</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">John Smith</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">HVAC Technician</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">(555) 123-4567</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-3"><i class="fas fa-eye"></i></a>
-                                        <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-3"><i class="fas fa-edit"></i></a>
-                                        <a href="#" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></a>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="px-5 py-3 border-t border-gray-200">
-                        <a href="#" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">View all employees →</a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Inventory Content -->
-            <div id="inventory-content" class="hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-2xl font-bold text-gray-800">Inventory Management</h1>
-                    <div class="flex space-x-4">
-                        <select class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option>All Categories</option>
-                            <option>Electrical</option>
-                            <option>HVAC</option>
-                            <option>Mechanical</option>
-                        </select>
-                        <button class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-                            <i class="fas fa-plus mr-2"></i>Add Item
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-5 border-b border-gray-200 flex justify-between items-center">
-                        <h2 class="text-xl font-semibold text-gray-800">Inventory Items</h2>
-                        <div class="relative w-64">
-                            <input type="text" class="w-full rounded border border-gray-300 pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Search inventory...">
-                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                        </div>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Code</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">INV-ELEC-150</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">30A Circuit Breaker</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Electrical</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">12 pieces</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">In Stock</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-3"><i class="fas fa-eye"></i></a>
-                                        <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-3"><i class="fas fa-edit"></i></a>
-                                        <a href="#" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></a>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="px-5 py-3 border-t border-gray-200">
-                        <a href="#" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">View all inventory →</a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Invoices Content -->
-            <div id="invoices-content" class="hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-2xl font-bold text-gray-800">Invoice Management</h1>
-                    <div class="flex space-x-4">
-                        <select class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option>All Status</option>
-                            <option>Paid</option>
-                            <option>Unpaid</option>
-                            <option>Overdue</option>
-                        </select>
-                        <button class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-                            <i class="fas fa-plus mr-2"></i>Create Invoice
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-5 border-b border-gray-200 flex justify-between items-center">
-                        <h2 class="text-xl font-semibold text-gray-800">Recent Invoices</h2>
-                        <div class="relative w-64">
-                            <input type="text" class="w-full rounded border border-gray-300 pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Search invoices...">
-                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                        </div>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice #</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">INV-2023-1050</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Acme Corporation</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2023-05-15</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$1,250.00</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Paid</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-3"><i class="fas fa-eye"></i></a>
-                                        <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-3"><i class="fas fa-print"></i></a>
-                                        <a href="#" class="text-red-600 hover:text-red-900"><i class="fas fa-envelope"></i></a>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="px-5 py-3 border-t border-gray-200">
-                        <a href="#" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">View all invoices →</a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Payments Content -->
-            <div id="payments-content" class="hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-2xl font-bold text-gray-800">Payment Records</h1>
-                    <div class="flex space-x-4">
-                        <select class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option>All Methods</option>
-                            <option>Credit Card</option>
-                            <option>Bank Transfer</option>
-                            <option>Check</option>
-                        </select>
-                        <button class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-                            <i class="fas fa-plus mr-2"></i>Record Payment
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-5 border-b border-gray-200 flex justify-between items-center">
-                        <h2 class="text-xl font-semibold text-gray-800">Recent Payments</h2>
-                        <div class="relative w-64">
-                            <input type="text" class="w-full rounded border border-gray-300 pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Search payments...">
-                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                        </div>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment #</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice #</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">PMT-2023-1045</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">INV-2023-1012</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Global Industries</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2023-05-10</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$850.00</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Credit Card</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="px-5 py-3 border-t border-gray-200">
-                        <a href="#" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">View all payment records →</a>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <script>
-        // Toggle sidebar
-        document.getElementById('toggleSidebar').addEventListener('click', function() {
-            document.getElementById('sidebar').classList.toggle('collapsed');
-            document.querySelector('.main-content').classList.toggle('ml-20');
-            document.querySelector('.main-content').classList.toggle('ml-64');
-        });
-
-        // Activate nav items and switch content
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', function() {
-                // Update active menu item
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Hide all content sections
-                document.querySelectorAll('main > div').forEach(section => {
-                    section.classList.add('hidden');
-                });
-
-                // Update page title and show the selected content
-                const navText = this.querySelector('.nav-text').textContent;
-                document.getElementById('page-title').textContent = navText;
-                
-                // Map menu items to content sections
-                const contentMap = {
-                    'Dashboard': 'dashboard',
-                    'Customers': 'customers',
-                    'Contracts': 'contracts',
-                    'Equipment': 'equipment',
-                    'Interventions': 'interventions',
-                    'Employees': 'employees',
-                    'Inventory': 'inventory',
-                    'Invoices': 'invoices',
-                    'Payments': 'payments'
-                };
-                
-                const contentId = `${contentMap[navText]}-content`;
-                document.getElementById(contentId).classList.remove('hidden');
-            });
-        });
-
-        // Simulate loading charts (in a real app, you would use a charting library)
-        setTimeout(() => {
-            console.log("Charts would be loaded here with real data");
-        }, 1000);
-    </script>
 </body>
 </html>
