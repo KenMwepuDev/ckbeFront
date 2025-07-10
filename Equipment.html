@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equipment - Equipment Maintenance CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .sidebar {
+            transition: all 0.3s ease;
+        }
+        .sidebar.collapsed {
+            width: 70px;
+        }
+        .sidebar.collapsed .nav-text {
+            display: none;
+        }
+        .main-content {
+            transition: all 0.3s ease;
+        }
+        .active {
+            background-color: #3b82f6;
+            color: white !important;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .card {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <div class="sidebar bg-indigo-800 text-white flex flex-col h-full" id="sidebar">
+        <div class="flex items-center justify-between p-4 border-b border-indigo-700">
+            <div class="flex items-center">
+                <i class="fas fa-tools text-2xl"></i>
+                <span class="nav-text ml-2 text-xl font-bold">MaintenanceCRM</span>
+            </div>
+            <button id="toggleSidebar" class="text-white focus:outline-none">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <nav class="flex-grow p-4 overflow-y-auto">
+            <ul>
+                <li class="mb-2">
+                    <a href="index.html" class="nav-item flex items-center p-2 rounded hover:bg-indigo-700">
+                        <i class="fas fa-home"></i>
+                        <span class="nav-text ml-2">Dashboard</span>
+                    </a>
+                </li>
+                <li class="mb-2">
+                    <a href="Customers.html" class="nav-item flex items-center p-2 rounded hover:bg-indigo-700">
+                        <i class="fas fa-users"></i>
+                        <span class="nav-text ml-2">Customers</span>
+                    </a>
+                </li>
+                <li class="mb-2">
+                    <a href="Contracts.html" class="nav-item flex items-center p-2 rounded hover:bg-indigo-700">
+                        <i class="fas fa-file-signature"></i>
+                        <span class="nav-text ml-2">Contracts</span>
+                    </a>
+                </li>
+                <li class="mb-2">
+                    <a href="Equipment.html" class="nav-item flex items-center p-2 rounded hover:bg-indigo-700 active">
+                        <i class="fas fa-cogs"></i>
+                        <span class="nav-text ml-2">Equipment</span>
+                    </a>
+                </li>
+                <li class="mb-2">
+                    <a href="Interventions.html" class="nav-item flex items-center p-2 rounded hover:bg-indigo-700">
+                        <i class="fas fa-wrench"></i>
+                        <span class="nav-text ml-2">Interventions</span>
+                    </a>
+                </li>
+                <li class="mb-2">
+                    <a href="Employees.html" class="nav-item flex items-center p-2 rounded hover:bg-indigo-700">
+                        <i class="fas fa-user-tie"></i>
+                        <span class="nav-text ml-2">Employees</span>
+                    </a>
+                </li>
+                <li class="mb-2">
+                    <a href="Inventory.html" class="nav-item flex items-center p-2 rounded hover:bg-indigo-700">
+                        <i class="fas fa-boxes"></i>
+                        <span class="nav-text ml-2">Inventory</span>
+                    </a>
+                </li>
+                <li class="mb-2">
+                    <a href="Invoices.html" class="nav-item flex items-center p-2 rounded hover:bg-indigo-700">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span class="nav-text ml-2">Invoices</span>
+                    </a>
+                </li>
+                <li class="mb-2">
+                    <a href="Payments.html" class="nav-item flex items-center p-2 rounded hover:bg-indigo-700">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span class="nav-text ml-2">Payments</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <div class="p-4 border-t border-indigo-700">
+            <div class="flex items-center">
+                <img src="https://ui-avatars.com/api/?name=Admin+User&background=random" alt="User" class="w-8 h-8 rounded-full">
+                <div class="ml-2 nav-text">
+                    <p class="text-sm">Admin User</p>
+                    <p class="text-xs text-indigo-300">admin@example.com</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content flex-1 flex flex-col overflow-hidden">
+        <!-- Top Navigation -->
+        <header class="bg-white shadow-sm z-10">
+            <div class="flex items-center justify-between p-4">
+                <h1 id="page-title" class="text-2xl font-bold text-gray-800">Equipment</h1>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <input type="text" class="rounded-full border border-gray-300 pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Search...">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                    <button class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <button class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto p-6 bg-gray-100">
+            <!-- Equipment Content -->
+            <div id="equipment-content">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-2xl font-bold text-gray-800">Equipment Inventory</h1>
+                    <div class="flex space-x-4">
+                        <select class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option>All Equipment Types</option>
+                            <option>HVAC</option>
+                            <option>Elevators</option>
+                            <option>Generators</option>
+                        </select>
+                        <button class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+                            <i class="fas fa-plus mr-2"></i>Register Equipment
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                    <div class="card bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">Total Equipment</p>
+                                <h2 class="text-3xl font-bold text-indigo-600">384</h2>
+                            </div>
+                            <div class="bg-indigo-100 p-3 rounded-full">
+                                <i class="fas fa-cogs text-indigo-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">Under Maintenance</p>
+                                <h2 class="text-3xl font-bold text-orange-600">14</h2>
+                            </div>
+                            <div class="bg-orange-100 p-3 rounded-full">
+                                <i class="fas fa-tools text-orange-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">Out of Service</p>
+                                <h2 class="text-3xl font-bold text-red-600">5</h2>
+                            </div>
+                            <div class="bg-red-100 p-3 rounded-full">
+                                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-5 border-b border-gray-200 flex justify-between items-center">
+                        <h2 class="text-xl font-semibold text-gray-800">All Equipment</h2>
+                        <div class="flex space-x-2">
+                            <div class="relative w-64">
+                                <input type="text" class="w-full rounded border border-gray-300 pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Search equipment...">
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                            </div>
+                            <button class="text-gray-600 hover:text-gray-800 p-2">
+                                <i class="fas fa-filter"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Serial #</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Service</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">A2432</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">HVAC Unit</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">ACME-HVAC-5000</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Acme Corp - Floor 3</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2023-05-20</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Operational</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-3"><i class="fas fa-history"></i></a>
+                                        <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-3"><i class="fas fa-edit"></i></a>
+                                        <a href="#" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></a>
+                                    </td>
+                                </tr>
+                                <!-- Additional equipment rows would be here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="px-5 py-3 border-t border-gray-200">
+                        <a href="#" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">View all equipment →</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+        // Toggle sidebar
+        document.getElementById('toggleSidebar').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+            document.querySelector('.main-content').classList.toggle('ml-20');
+            document.querySelector('.main-content').classList.toggle('ml-64');
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,93 @@
+{
+  "customers": [
+    {
+      "id": "C-1001",
+      "name": "Acme Corporation",
+      "contact": "John Smith",
+      "phone": "(555) 123-4567",
+      "email": "contact@acme.com"
+    }
+  ],
+  "contracts": [
+    {
+      "id": "CT-2023-001",
+      "customerId": "C-1001",
+      "startDate": "2023-01-15",
+      "endDate": "2023-12-31",
+      "status": "Active"
+    }
+  ],
+  "equipment": [
+    {
+      "serial": "A2432",
+      "contractId": "CT-2023-001",
+      "type": "HVAC Unit",
+      "model": "ACME-HVAC-5000",
+      "location": "Acme Corp - Floor 3",
+      "lastService": "2023-05-20",
+      "status": "Operational"
+    }
+  ],
+  "interventions": [
+    {
+      "id": "INT-1024",
+      "equipmentSerial": "A2432",
+      "employeeId": "EMP-1051",
+      "date": "2023-06-15",
+      "status": "In Progress"
+    }
+  ],
+  "employees": [
+    {
+      "id": "EMP-1051",
+      "name": "John Smith",
+      "role": "HVAC Technician",
+      "contact": "(555) 123-4567",
+      "status": "Active"
+    }
+  ],
+  "stock_out": [
+    {
+      "id": "SO-1001",
+      "interventionId": "INT-1024",
+      "inventoryItemId": "INV-ELEC-150",
+      "quantity": 2
+    }
+  ],
+  "inventory_items": [
+    {
+      "id": "INV-ELEC-150",
+      "name": "30A Circuit Breaker",
+      "category": "Electrical",
+      "quantity": 12,
+      "unit": "pieces",
+      "status": "In Stock"
+    }
+  ],
+  "restock": [
+    {
+      "id": "RS-1001",
+      "inventoryItemId": "INV-ELEC-150",
+      "date": "2023-06-01",
+      "quantity": 10
+    }
+  ],
+  "invoices": [
+    {
+      "id": "INV-2023-1050",
+      "contractId": "CT-2023-001",
+      "date": "2023-05-15",
+      "amount": 1250.00,
+      "status": "Paid"
+    }
+  ],
+  "payments": [
+    {
+      "id": "PMT-2023-1045",
+      "invoiceId": "INV-2023-1050",
+      "date": "2023-05-20",
+      "amount": 1250.00,
+      "method": "Credit Card"
+    }
+  ]
+}
