@@ -148,7 +148,7 @@ async function generatePaymentHistoryReport() {
                     <td class="td-cell">${new Date(p.date).toLocaleDateString()}</td>
                     <td class="td-cell">${p.id}</td>
                     <td class="td-cell">${p.invoiceCustomId}</td>
-                    <td class="td-cell">${parseFloat(p.amount || 0).toFixed(2)} €</td>
+                    <td class="td-cell">${parseFloat(p.amount || 0).toFixed(2)} $</td>
                     <td class="td-cell">${p.method || ''}</td>
                     <td class="td-cell">${p.notes || ''}</td>
                 </tr>
@@ -160,7 +160,7 @@ async function generatePaymentHistoryReport() {
         $('.th-cell').addClass('px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider');
         $('.td-cell').addClass('px-4 py-3 whitespace-nowrap text-sm text-gray-700');
 
-        $reportSummary.html(`Total des Paiements Reçus: <span class="text-lg text-green-600">${totalAmountReceived.toFixed(2)} €</span>`);
+        $reportSummary.html(`Total des Paiements Reçus: <span class="text-lg text-green-600">${totalAmountReceived.toFixed(2)} $</span>`);
 
 
     } catch (error) {

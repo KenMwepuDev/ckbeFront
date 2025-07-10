@@ -140,9 +140,9 @@ async function displayInvoices(filterContractId = null, filterStatus = null) {
                     <td class="td-cell">${inv.customId || inv.id}</td>
                     <td class="td-cell">${inv.contractDisplay}</td>
                     <td class="td-cell">${inv.date ? new Date(inv.date).toLocaleDateString() : ''}</td>
-                    <td class="td-cell">${parseFloat(inv.amount || 0).toFixed(2)} €</td>
-                    <td class="td-cell">${inv.totalPaid} €</td>
-                    <td class="td-cell">${balanceDue} €</td>
+                    <td class="td-cell">${parseFloat(inv.amount || 0).toFixed(2)} $</td>
+                    <td class="td-cell">${inv.totalPaid} $</td>
+                    <td class="td-cell">${balanceDue} $</td>
                     <td class="td-cell">${inv.status || ''}</td>
                     <td class="td-cell">
                         <button class="text-green-600 hover:text-green-900 addPaymentBtn" data-id="${inv.id}" data-invoice-custom-id="${inv.customId || inv.id}" data-amount-due="${balanceDue}">Ajouter Paiement</button>
@@ -448,7 +448,7 @@ function openPaymentModal(invoiceId, invoiceCustomId, amountDue) {
         <form id="paymentForm">
             <input type="hidden" id="paymentInvoiceId" value="${invoiceId}">
             <div class="mb-4">
-                <label class="form-label">Montant Dû: <span class="font-bold">${parseFloat(amountDue).toFixed(2)} €</span></label>
+                <label class="form-label">Montant Dû: <span class="font-bold">${parseFloat(amountDue).toFixed(2)} $</span></label>
             </div>
             <div class="mb-4">
                 <label for="paymentAmount" class="form-label">Montant du Paiement:</label>
@@ -566,7 +566,7 @@ async function viewInvoicePayments(invoiceId, invoiceCustomId) {
             paymentEntries.forEach(entry => {
                 paymentsHtml += `
                     <li class="text-sm">
-                        ${new Date(entry.date).toLocaleDateString()}: <strong>${parseFloat(entry.amount).toFixed(2)} €</strong> (${entry.method})
+                        ${new Date(entry.date).toLocaleDateString()}: <strong>${parseFloat(entry.amount).toFixed(2)} $</strong> (${entry.method})
                         ${entry.notes ? `<br><small class="text-gray-500">Notes: ${entry.notes}</small>` : ''}
                         <button class="text-xs text-red-500 hover:text-red-700 ml-2 deletePaymentBtn" data-payment-id="${entry.id}" data-invoice-id="${invoiceId}">(Supprimer)</button>
                     </li>`;
