@@ -1,13 +1,13 @@
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "zCa0CiNDACykrEpUPx9ZLNvRgfuIpFi0ZJvmMkmc",
-  authDomain: "regidesolyd.firebaseapp.com",
-  databaseURL: "https://regidesolyd-default-rtdb.firebaseio.com/",
-  projectId: "regidesolyd",
-  storageBucket: "regidesolyd.appspot.com",
-  messagingSenderId: "299171015851",
-  appId: "1:299171015851:web:xxxxxxxxxxxxxxxxxxxxxx" // App ID might need to be generated from Firebase console if not readily available
+  apiKey: "AIzaSyDkDqFSa3UJlNOLzMEOx9D6bLjlN3gMSSI",
+  authDomain: "postmarket-7aaaa.firebaseapp.com",
+  databaseURL: "https://postmarket-7aaaa-default-rtdb.firebaseio.com/",
+  projectId: "postmarket-7aaaa",
+  storageBucket: "postmarket-7aaaa.appspot.com",
+  messagingSenderId: "299171015850",
+  appId: "1:299171015850:web:xxxxxxxxxxxxxxxxxxxxxx" // App ID might need to be generated from Firebase console if not readily available
 };
 
 // Initialize Firebase
