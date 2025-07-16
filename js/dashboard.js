@@ -6,19 +6,34 @@ function loadDashboardModule() {
     loadBusinessMetrics();
 }
 
+function normalizeData(data) {
+    return {
+        customers: data.customers ? Object.values(data.customers) : [],
+        contracts: data.contracts ? Object.values(data.contracts) : [],
+        employees: data.employees ? Object.values(data.employees) : [],
+        equipment: data.equipment ? Object.values(data.equipment) : [],
+        interventions: data.interventions ? Object.values(data.interventions) : [],
+        inventory_items: data.inventory_items ? Object.values(data.inventory_items) : [],
+        invoices: data.invoices ? Object.values(data.invoices) : [],
+        payments: data.payments ? Object.values(data.payments) : [],
+        // Add other collections as needed
+    };
+}
+
 function loadBusinessMetrics() {
-    // Load data from Firebase or local storage
+    // Load data from Firebase only
     const dataRef = firebase.database().ref('/');
     
     dataRef.once('value')
         .then((snapshot) => {
-            const data = snapshot.val() || {};
+            const rawData = snapshot.val() || {};
+            const data = normalizeData(rawData);
             displayDashboardMetrics(data);
         })
         .catch((error) => {
             console.error("Error loading dashboard data:", error);
-            // Fallback to local data if Firebase fails
-            loadLocalData();
+            showToast("Erreur lors du chargement des données Firebase", "error");
+            // No fallback to local data
         });
 }
 
